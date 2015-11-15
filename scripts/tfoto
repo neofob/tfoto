@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+__author__ = "tuan t. pham"
+__version__ = "0.0.1"
+
+"""
+tfoto resizes a bunch of big image files to web-friendly size.
+The default settings are stored in $HOME/.config/image/image.cfg
+
+Usuage::
+    $ pip install tfoto
+    $ tfoto [DIRS..] [-d OUTPUT_DIR]
+
+Resize photos in the list of directories and write them to OUTPUT_DIR
+
+    :copyright: (c) 2014 by tuan t. pham
+"""
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
+
+from optparse import OptionParser
+
+import os
+from tfoto import (tfoto, utils)
+
+OUTPUT = False
+CONFIG_FILE = 'image.cfg'
+DEFAULT_DIR = '.config/image'
+
+image_settings = dict()
+
+image_defaults = {
+    'scale': '1920x1080',
+    'quality': 95,
+    'sharpen': '1x1.5',
+    'type': 'JPG',
+    'profile': 'strip',
+    'fmatch': ['*.TIF', '*.tif', '*.PNG', '*.JPG'],
+}
+
+
+def parse_config(config_file):
+    parser = configparser.ConfigParser()
+    parser.read(config_file)
+    settings = dict()
+
+    # parsing string
+    for entry in ('scale', 'type', 'profile', 'sharpen'):
+        try:
+            settings[entry] = parser.get('Image', entry)
+            utils.DEBUG("%s=%s" % (entry, settings[entry]))
+        except configparser.NoOptionError:
+            pass
+        except configparser.NoSectionError:
+            break
+
+    # parsing int
+    settings['quality'] = parser.getint('Image', 'quality')
+
+    # parsing file match pattern
+    pattern = parser.get('Image', 'fmatch')
+    utils.DEBUG(pattern)
+    settings['fmatch'] = pattern.split(', ')
+    return settings
+
+
+def load_config(config_file):
+    global image_settings
+    print ('config file = %s' % config_file)
+    image_settings = parse_config(config_file)
+
+    print "image settings:"
+    for key in image_settings:
+        print "%s = %s" % (key, image_settings[key])
+
+
+def add_flags(parser):
+    parser.add_option("-v", "--version",
+                      action="store_true", dest="show_version", default=False,
+                      help="show version number and exit")
+
+    parser.add_option("-D", "--debug",
+                      action="store_true", dest="show_debug", default=False,
+                      help="show debug info")
+
+    parser.add_option("-d", "--dry-run",
+                      action="store_true", dest="dry_run", default=False,
+                      help="don't do anything, just print commands")
+
+    parser.add_option("-c", "--config",
+                      type="string", dest="config_file",
+                      help="set config file location (default: %s)" %
+                      ("~/" + DEFAULT_DIR + '/' + CONFIG_FILE))
+
+    parser.add_option("-o", "--output",
+                      type="string", dest="output_dir",
+                      help="output directory (default: same as input file)")
+
+
+def parse_args():
+    parser = OptionParser(usage="%prog [-c CONFIG_FILE] [INPUT_DIRS...]",
+                          epilog="Author: Tuan T. Pham <tuan at vt dot edu>")
+    add_flags(parser)
+    (opts, args) = parser.parse_args()
+    if opts.show_version:
+        print ('mkweb v%s' % __version__)
+        exit(0)
+
+    if opts.show_debug:
+        utils.OUTPUT = True
+
+    if opts.dry_run:
+        utils.DRY_RUN = True
+
+    load_config(opts.config_file or
+                os.path.expanduser('~/%s/%s' % (DEFAULT_DIR, CONFIG_FILE)))
+
+    return args
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    tfoto.process_dirs(args, image_settings)
