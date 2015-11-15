@@ -5,5 +5,5 @@ config file (size, sharpen...).*
 ### Quick use
 ```
 $ pip install tfoto
-$ tfoto /path/to/bigtif -d /tmp/jpg
+$ tfoto --help
 ```
