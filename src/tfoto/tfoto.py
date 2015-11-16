@@ -14,6 +14,8 @@ my_settings = dict()
 
 def process_dirs(dirs, image_settings):
     CWD = os.getcwd()
+    DEBUG('Input dirs = %s' % dirs)
+    DEBUG('CWD = %s' % CWD)
     global my_settings
     my_settings = image_settings
     file_list = []
@@ -29,8 +31,7 @@ def process_dirs(dirs, image_settings):
             os.chdir(CWD)
 
     # Distribute the big list to all the threads
-    # thread_no = multiprocessing.cpu_count()
-    thread_no = 1
+    thread_no = multiprocessing.cpu_count()
     print "Number of threads = %d" % thread_no
     print "Total files to process = %d" % len(file_list)
     procs = []
