@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 __author__ = "tuan t. pham"
-__version__ = "0.0.1"
+__version__ = "v0.0.2"
 
 """
 tfoto resizes a bunch of big image files to web-friendly size.
@@ -25,7 +25,6 @@ from optparse import OptionParser
 import os
 from tfoto import (tfoto, utils)
 
-OUTPUT = False
 CONFIG_FILE = 'image.cfg'
 DEFAULT_DIR = '.config/image'
 
@@ -110,9 +109,11 @@ def parse_args():
 
     if opts.show_debug:
         utils.OUTPUT = True
+        utils.DEBUG('Option --debug is set')
 
     if opts.dry_run:
         utils.DRY_RUN = True
+        utils.DEBUG('DRY_RUN is set')
 
     load_config(opts.config_file or
                 os.path.expanduser('~/%s/%s' % (DEFAULT_DIR, CONFIG_FILE)))

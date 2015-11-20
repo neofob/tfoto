@@ -1,16 +1,15 @@
 import os
-import sys
 import glob
-import string
 import re
 from wand.image import Image
 import multiprocessing
 from multiprocessing import Process
-from optparse import OptionParser
 
-from .utils import (DRY_RUN, OUTPUT, DEBUG)
+from .utils import DEBUG
+import utils
 
 my_settings = dict()
+
 
 def process_dirs(dirs, image_settings):
     CWD = os.getcwd()
@@ -46,8 +45,8 @@ def process_dirs(dirs, image_settings):
     for i in range(len(remain)):
         args_array[i].append(remain[i])
 
-    print 'file_list = %s' % file_list
-    print 'args_array = %s' % args_array
+    DEBUG('file_list = %s' % file_list)
+    DEBUG('args_array = %s' % args_array)
     for i in range(thread_no):
         procs.append(Process(target=process_image, args=(args_array[i],)))
         procs[i].start()
@@ -60,17 +59,21 @@ def process_dirs(dirs, image_settings):
 
     os.chdir(CWD)
 
+
 def process_image(images):
     DEBUG(images)
     global my_settings
+    re_obj = re.compile('\.[^\.]+$')
     radius, sigma = [float(s) for s in my_settings['sharpen'].split('x')]
     for item in images:
-        with Image(filename=item) as img:
-            img.compression_quality = my_settings['quality']
-            img.transform(resize=my_settings['scale'])
-            img.unsharp_mask(radius=radius, sigma=sigma, amount=85, threshold=4)
-            if 'strip' == my_settings['profile']:
-                img.strip()
-            output = string.replace(item, re.search('\.[^\.]+$', item).group(0), '.jpg')
-            print 'output=%s' % output
-            img.save(filename=output)
+        output = re.sub(re_obj, '.jpg', item)
+        DEBUG('output=%s' % output)
+        if utils.DRY_RUN is False:
+            with Image(filename=item) as img:
+                img.compression_quality = my_settings['quality']
+                img.transform(resize=my_settings['scale'])
+                img.unsharp_mask(radius=radius, sigma=sigma, amount=85,
+                                 threshold=4)
+                if 'strip' == my_settings['profile']:
+                    img.strip()
+                img.save(filename=output)
